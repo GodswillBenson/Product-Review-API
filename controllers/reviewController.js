@@ -7,9 +7,10 @@ exports.getReviews = async (req, res, next) => {
       .filter()
       .sort()
       .limitFields()
-      .limitResults();
+      .limitResults()
+      .paginate();
     const reviews = await features.query.populate('userId productId');
-    res.status(200).json({ status: 'success', data: reviews });
+    res.status(200).json({ status: 'success', results: reviews.length, data: reviews });
   } catch (error) { next(error); }
 };
 

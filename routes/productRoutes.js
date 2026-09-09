@@ -3,6 +3,7 @@ const { getProducts, getProduct, createProduct, updateProduct, deleteProduct } =
 
 const router = express.Router();
 
+router.route('/top-5-cheap').get(getProducts);
 router.route('/').get(getProducts).post(createProduct);
 router.route('/:id').get(getProduct).patch(updateProduct).delete(deleteProduct);
 
