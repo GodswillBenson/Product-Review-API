@@ -1,9 +1,9 @@
 const User = require("../models/userModel");
-const QueryFeatures = require("../utils/queryFeatures");
+const ApiFeatures = require("../utils/apiFeatures");
 
 exports.getUsers = async (req, res, next) => {
   try {
-    const features = new QueryFeatures(User.find(), req.query)
+    const features = new ApiFeatures(User.find(), req.query)
       .filter()
       .sort()
       .limitFields()

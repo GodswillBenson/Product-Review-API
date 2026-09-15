@@ -1,18 +1,34 @@
 const Product = require('../models/productModel');
-const QueryFeatures = require('../utils/queryFeatures');
+const ApiFeatures = require('../utils/apiFeatures');
 
 exports.getProducts = async (req, res, next) => {
   try {
-    const features = new QueryFeatures(Product.find(), req.query)
+    const features = new ApiFeatures(Product.find(), req.query)
       .filter()
       .sort()
       .limitFields()
       .limitResults()
       .paginate();
+
     const products = await features.query;
-    res.status(200).json({ status: 'success', results: products.length, data: products });
-  } catch (error) { next(error); }
+
+    res.status(200).json({
+      status: 'success',
+      results: products.length,
+      data: products
+    });
+  } catch (error) {
+    next(error);
+  }
 };
+
+exports.aliasTopProducts = (req, res, next) => {
+  req.query.limit = '5';
+  req.query.sort = '-averageRating,price';
+  req.query.fields = 'name,price,category,description,averageRating';
+  next();
+};
+
 
 exports.getProduct = async (req, res, next) => {
   try {
@@ -43,4 +59,63 @@ exports.deleteProduct = async (req, res, next) => {
     if (!product) return res.status(404).json({ status: 'error', message: 'Product not found' });
     res.status(204).json({ status: 'success', data: null });
   } catch (error) { next(error); }
+};
+
+exports.getProductStats = async (req, res, next) => {
+  try {
+    const stats = await Product.aggregate([
+      {
+        $match: {
+          averageRating: {
+            $gte: 4.5,
+          },
+        },
+      },
+
+      {
+        $group: {
+          _id: "$category",
+
+          numProducts: {
+            $sum: 1,
+          },
+
+          numRatings: {
+            $sum: "$numberOfRatings",
+          },
+
+          avgRating: {
+            $avg: "$averageRating",
+          },
+
+          avgPrice: {
+            $avg: "$price",
+          },
+
+          minPrice: {
+            $min: "$price",
+          },
+
+          maxPrice: {
+            $max: "$price",
+          },
+        },
+      },
+
+      {
+        $sort: {
+          avgPrice: 1,
+        },
+      },
+    ]);
+
+    res.status(200).json({
+      status: "success",
+      data: {
+        stats,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
 };

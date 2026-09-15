@@ -1,16 +1,15 @@
-class QueryFeatures {
+class ApiFeatures {
   constructor(query, queryString) {
     this.query = query;
     this.queryString = queryString;
   }
-
 
   //filtering
   filter() {
     const queryObj = { ...this.queryString };
     const excludedFields = ['sort', 'fields', 'limit', 'page'];
 
-    excludedFields.forEach((field) => delete queryObj[field]);
+    excludedFields.forEach((el) => delete queryObj[el]);
 
     let queryStr = JSON.stringify(queryObj);
     queryStr = queryStr.replace(/\b(gte|gt|lte|lt)\b/g, (match) => `$${match}`);
@@ -49,35 +48,18 @@ class QueryFeatures {
     return this;
   }
 
-  //pagination
-  async paginate() {
-    // 1. Set default values if the user doesn't provide them in the URL
-    const page = Number(this.queryString.page) || 1;
-    const limit = Number(this.queryString.limit) || 10; // Default to 10 items per page
-
+  paginate() {
+    // 1. Set default values if the user doesn't provide them in the URL query parameters
+    const page = this.queryString.page * 1 || 1;
+    const limit = this.queryString.limit * 1 || 10; // Default to 10 items per page
     // 2. Calculate how many documents to skip
     // Example: Page 3 with a limit of 10 -> (3 - 1) * 10 = skip 20 documents
     const skip = (page - 1) * limit;
-
     // 3. Apply skip and limit to the database query
     this.query = this.query.skip(skip).limit(limit);
-
-
-    if (this.queryString.page) {
-      // Use .clone() so countDocuments() doesn't consume or lock the main query
-      const totalDocuments = await this.query.model
-        .find(this.query.getFilter())
-        .clone()
-        .countDocuments();
-
-      if (skip >= totalDocuments) {
-        throw new Error('PageOutOfBounds');
-      }
-    }
-
 
     return this;
   }
 }
 
-module.exports = QueryFeatures;
+module.exports = ApiFeatures;
